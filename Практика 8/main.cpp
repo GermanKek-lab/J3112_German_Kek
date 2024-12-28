@@ -16,15 +16,16 @@ struct Node {
     vector<pair<Node*, double>> edges;
 };
 
+
 struct Graph {
     vector<Node*> nodes;
     unordered_map<string, Node*> node_map;
 
     Node* find_closest_node(double lat, double lon) {
-        
-        double min_distance = 99999;
+        double min_distance = numeric_limits<double>::max();
         Node* node_founded = nullptr;
 
+        // Перебор всех узлов графа
         for (auto node : nodes) {
             double distance = sqrt(pow(node->lat - lat, 2) + pow(node->lon - lon, 2));
             if (distance < min_distance) {
@@ -35,19 +36,19 @@ struct Graph {
 
         return node_founded;
     }
-    
+
     vector<string> split(string s, char del) {
         stringstream ss(s);
         string word;
         vector<string> tokens;
-    
+
         while (getline(ss, word, del)) {
             tokens.push_back(word);
         }
-    
+
         return tokens;
     }
-    
+
     Node* get_or_create_node(double lat, double lon) {
         string key = to_string(lat) + "," + to_string(lon);
         if (node_map.find(key) == node_map.end()) {
@@ -57,53 +58,53 @@ struct Graph {
         }
         return node_map[key];
     }
-    
+
     void processing_line(string line) {
         vector<string> parts = split(line, ':');
         vector<string> coords = split(parts[0], ',');
-        
+
         double lat = stod(coords[0]);
         double lon = stod(coords[1]);
-        
+
         Node* parent_node = get_or_create_node(lat, lon);
-        
+
         vector<string> edges = split(parts[1], ';');
         for (string edge : edges) {
             vector<string> edge_parts = split(edge, ',');
-            
+
             double subsidiary_lat = stod(edge_parts[0]);
             double subsidiary_lon = stod(edge_parts[1]);
             double weight = stod(edge_parts[2]);
-            
+
             Node* subsidiary_node = get_or_create_node(subsidiary_lat, subsidiary_lon);
-            
+
             parent_node->edges.push_back(make_pair(subsidiary_node, weight));
             subsidiary_node->edges.push_back(make_pair(parent_node, weight));
         }
     }
-    
+
     void read_graph(string filename) {
         ifstream file(filename);
-        
+
         string line;
         while (getline(file, line)) {
             processing_line(line);
         }
     }
-    
+
     vector<Node*> dfs(double start_lat, double start_lon, double target_lat, double target_lon) {
         Node* start_node = find_closest_node(start_lat, start_lon);
         Node* target_node = find_closest_node(target_lat, target_lon);
-    
+
         vector<Node*> best_path, path;
         set<Node*> visited;
-    
+
         path.push_back(start_node);
         visited.insert(start_node);
-    
+
         while (!path.empty()) {
             Node* current = path.back();
-    
+
             if (current == target_node) {
                 if (best_path.empty() || path.size() < best_path.size()) {
                     best_path = path;
@@ -115,29 +116,29 @@ struct Graph {
                 continue;
             }
 
-        bool flag = true;
-        for (auto& edge : current->edges) {
-            Node* neighbor = edge.first;
-            if (visited.find(neighbor) == visited.end()) {
-                path.push_back(neighbor);
-                visited.insert(neighbor);
-                flag = false;
-                break;
+            bool flag = true;
+            for (auto& edge : current->edges) {
+                Node* neighbor = edge.first;
+                if (visited.find(neighbor) == visited.end()) {
+                    path.push_back(neighbor);
+                    visited.insert(neighbor);
+                    flag = false;
+                    break;
+                }
             }
-        }
 
-        if (flag) {
+            if (flag) {
                 path.pop_back();
             }
         }
 
         return best_path;
     }
-    
+
     vector<Node*> bfs(double start_lat, double start_lon, double target_lat, double target_lon) {
         Node* start_node = find_closest_node(start_lat, start_lon);
         Node* target_node = find_closest_node(target_lat, target_lon);
-        
+
         vector<Node*> stack;
         set<Node*> visited;
         unordered_map<Node*, Node*> parent;
@@ -148,16 +149,15 @@ struct Graph {
         while (!stack.empty()) {
             Node* current = stack[0];
             stack.erase(stack.begin());
-            
+
             if (current == target_node) {
                 vector<Node*> path;
                 while (current) {
                     path.push_back(current);
                     current = parent[current];
                 }
-                
+
                 reverse(path.begin(), path.end());
-                
                 return path;
             }
 
@@ -173,25 +173,25 @@ struct Graph {
 
         return {};
     }
-    
+
     vector<Node*> dijkstra(double start_lat, double start_lon, double target_lat, double target_lon) {
         Node* start_node = find_closest_node(start_lat, start_lon);
         Node* target_node = find_closest_node(target_lat, target_lon);
-        
+
         unordered_map<Node*, double> distances;
         unordered_map<Node*, Node*> parents;
         set<pair<double, Node*>> stack;
-        
+
         for (Node* node : nodes) {
-            distances[node] = 9999999;
+            distances[node] = numeric_limits<double>::max();
         }
         distances[start_node] = 0.0;
         stack.insert({0.0, start_node});
-        
+
         while (!stack.empty()) {
             Node* current = stack.begin()->second;
             stack.erase(stack.begin());
-            
+
             if (current == target_node) {
                 break;
             }
@@ -209,35 +209,33 @@ struct Graph {
                 }
             }
         }
-        
+
         vector<Node*> path;
         Node* current = target_node;
         while (current) {
             path.push_back(current);
             current = parents[current];
         }
-        
-        reverse(path.begin(), path.end());
 
+        reverse(path.begin(), path.end());
         return path;
-        
     }
-    
+
     double metric(Node* a, Node* b) {
         double dx = a->lon - b->lon;
         double dy = a->lat - b->lat;
         return sqrt(dx * dx + dy * dy);
     }
-    
+
     vector<Node*> Astar(double start_lat, double start_lon, double target_lat, double target_lon) {
         Node* start_node = find_closest_node(start_lat, start_lon);
         Node* target_node = find_closest_node(target_lat, target_lon);
-        
+
         unordered_map<Node*, double> f;
         unordered_map<Node*, double> h;
         unordered_map<Node*, Node*> parents;
         set<pair<double, Node*>> stack;
-        
+
         for (Node* node : nodes) {
             f[node] = numeric_limits<double>::infinity();
             h[node] = numeric_limits<double>::infinity();
@@ -245,11 +243,11 @@ struct Graph {
         f[start_node] = 0.0;
         h[start_node] = metric(start_node, target_node);
         stack.insert({h[start_node], start_node});
-        
+
         while (!stack.empty()) {
             Node* current = stack.begin()->second;
             stack.erase(stack.begin());
-            
+
             if (current == target_node) {
                 vector<Node*> path;
                 while (current) {
@@ -259,7 +257,7 @@ struct Graph {
                 reverse(path.begin(), path.end());
                 return path;
             }
-            
+
             for (pair<Node*, double> edge : current->edges) {
                 Node* neighbor = edge.first;
                 double weight = edge.second;
@@ -274,8 +272,87 @@ struct Graph {
                 }
             }
         }
-        
+
         return {};
     }
-    
+
 };
+
+
+int main() {
+    Graph graph;
+    string filename = "spb_graph.txt";
+    vector<Node*> path;
+
+    graph.read_graph(filename);
+
+    auto start = chrono::high_resolution_clock::now();
+    path = graph.dfs(30.3585261, 59.8864419, 30.3027079, 59.9570161);
+    cout << "Path size: "<< path.size() << endl;
+    auto end = std::chrono::high_resolution_clock::now();
+    chrono::duration<double> delta = end - start;
+    cout << delta.count() << " DFS секунд"<< endl;;
+
+    if (!path.empty()) {
+        cout << "Shorted path:" << endl;
+        for (const auto& node : path) {
+            cout << "(" << node->lat << ", " << node->lon << ") => ";
+        }
+        cout << "\n";
+    } else {
+        cout << "Path didn't found" << endl;
+    }
+
+    start = chrono::high_resolution_clock::now();
+    path = graph.bfs(30.3585261, 59.8864419, 30.3027079, 59.9570161);
+    cout << "Path size: "<< path.size() << endl;
+    end = chrono::high_resolution_clock::now();
+    delta = end - start;
+    cout << "BFS: " << delta.count() << " s" << endl;
+
+    if (!path.empty()) {
+        cout << "Shorted path:" << endl;
+        for (const auto& node : path) {
+            cout << "(" << node->lat << ", " << node->lon << ") => ";
+        }
+        cout << "\n";
+    } else {
+        cout << "Path didn't found" << endl;
+    }
+
+    start = chrono::high_resolution_clock::now();
+    path = graph.dijkstra(30.3585261, 59.8864419, 30.3027079, 59.9570161);
+    cout << "Path size: "<< path.size() << endl;
+    end = chrono::high_resolution_clock::now();
+    delta = end - start;
+    cout << "Dijkstra: " << delta.count() << " s" << endl;
+
+    if (!path.empty()) {
+        cout << "Shorted path:" << endl;
+        for (const auto& node : path) {
+            cout << "(" << node->lat << ", " << node->lon << ") => ";
+        }
+        cout << "\n";
+    } else {
+        cout << "Path didn't found" << endl;
+    }
+
+    start = chrono::high_resolution_clock::now();
+    path = graph.Astar(30.3585261, 59.8864419, 30.3027079, 59.9570161);
+    cout << "Path size: "<< path.size() << endl;
+    end = chrono::high_resolution_clock::now();
+    delta = end - start;
+    cout << "A*: " << delta.count() << " s"<< endl;;
+
+    if (!path.empty()) {
+        cout << "Shorted path:" << endl;
+        for (const auto& node : path) {
+            cout << "(" << node->lat << ", " << node->lon << ") => ";
+        }
+        cout << "\n";
+    } else {
+        cout << "Path didn't found" << endl;
+    }
+
+    return 0;
+}
