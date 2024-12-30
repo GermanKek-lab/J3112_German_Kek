@@ -1,3 +1,4 @@
+#include <cassert>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -8,6 +9,7 @@
 #include <string>
 #include <set>
 #include <algorithm>
+#include <chrono>
 using namespace std;
 
 
@@ -275,84 +277,161 @@ struct Graph {
 
         return {};
     }
-
 };
 
 
-int main() {
+// int main() {
+//     Graph graph;
+//     string filename = "spb_graph.txt";
+//     vector<Node*> path;
+
+//     graph.read_graph(filename);
+
+//     auto start = chrono::high_resolution_clock::now();
+//     path = graph.dfs(30.3585261, 59.8864419, 30.3027079, 59.9570161);
+//     cout << "Path size: "<< path.size() << endl;
+//     auto end = chrono::high_resolution_clock::now();
+//     chrono::duration<double> delta = end - start;
+//     cout << "DFS: " << delta.count() << " s"<< endl;;
+
+//     if (!path.empty()) {
+//         cout << "Shorted path:" << endl;
+//         for (const auto& node : path) {
+//             cout << "(" << node->lat << ", " << node->lon << ") => ";
+//         }
+//         cout << "\n";
+//     } else {
+//         cout << "Path didn't found" << endl;
+//     }
+
+//     start = chrono::high_resolution_clock::now();
+//     path = graph.bfs(30.3585261, 59.8864419, 30.3027079, 59.9570161);
+//     cout << "Path size: "<< path.size() << endl;
+//     end = chrono::high_resolution_clock::now();
+//     delta = end - start;
+//     cout << "BFS: " << delta.count() << " s" << endl;
+
+//     if (!path.empty()) {
+//         cout << "Shorted path:" << endl;
+//         for (const auto& node : path) {
+//             cout << "(" << node->lat << ", " << node->lon << ") => ";
+//         }
+//         cout << "\n";
+//     } else {
+//         cout << "Path didn't found" << endl;
+//     }
+
+//     start = chrono::high_resolution_clock::now();
+//     path = graph.dijkstra(30.3585261, 59.8864419, 30.3027079, 59.9570161);
+//     cout << "Path size: "<< path.size() << endl;
+//     end = chrono::high_resolution_clock::now();
+//     delta = end - start;
+//     cout << "Dijkstra: " << delta.count() << " s" << endl;
+
+//     if (!path.empty()) {
+//         cout << "Shorted path:" << endl;
+//         for (const auto& node : path) {
+//             cout << "(" << node->lat << ", " << node->lon << ") => ";
+//         }
+//         cout << "\n";
+//     } else {
+//         cout << "Path didn't found" << endl;
+//     }
+
+//     start = chrono::high_resolution_clock::now();
+//     path = graph.Astar(30.3585261, 59.8864419, 30.3027079, 59.9570161);
+//     cout << "Path size: "<< path.size() << endl;
+//     end = chrono::high_resolution_clock::now();
+//     delta = end - start;
+//     cout << "A*: " << delta.count() << " s"<< endl;;
+
+//     if (!path.empty()) {
+//         cout << "Shorted path:" << endl;
+//         for (const auto& node : path) {
+//             cout << "(" << node->lat << ", " << node->lon << ") => ";
+//         }
+//         cout << "\n";
+//     } else {
+//         cout << "Path didn't found" << endl;
+//     }
+
+//     return 0;
+// }
+
+
+void test_read_graph() {
     Graph graph;
-    string filename = "spb_graph.txt";
-    vector<Node*> path;
+    graph.read_graph("graph.txt");
 
-    graph.read_graph(filename);
+    assert(graph.nodes.size() == 8);
 
-    auto start = chrono::high_resolution_clock::now();
-    path = graph.dfs(30.3585261, 59.8864419, 30.3027079, 59.9570161);
-    cout << "Path size: "<< path.size() << endl;
-    auto end = std::chrono::high_resolution_clock::now();
-    chrono::duration<double> delta = end - start;
-    cout << delta.count() << " DFS секунд"<< endl;;
+    Node* node1 = graph.find_closest_node(59.8864419, 30.3585261);
+    assert(node1->edges.size() == 2);
 
-    if (!path.empty()) {
-        cout << "Shorted path:" << endl;
-        for (const auto& node : path) {
-            cout << "(" << node->lat << ", " << node->lon << ") => ";
-        }
-        cout << "\n";
-    } else {
-        cout << "Path didn't found" << endl;
-    }
+    Node* node2 = graph.find_closest_node(59.8844419, 30.3555261);
+    assert(node2->edges.size() == 2);
+}
 
-    start = chrono::high_resolution_clock::now();
-    path = graph.bfs(30.3585261, 59.8864419, 30.3027079, 59.9570161);
-    cout << "Path size: "<< path.size() << endl;
-    end = chrono::high_resolution_clock::now();
-    delta = end - start;
-    cout << "BFS: " << delta.count() << " s" << endl;
+void test_dfs() {
+    Graph graph;
+    graph.read_graph("graph.txt");
 
-    if (!path.empty()) {
-        cout << "Shorted path:" << endl;
-        for (const auto& node : path) {
-            cout << "(" << node->lat << ", " << node->lon << ") => ";
-        }
-        cout << "\n";
-    } else {
-        cout << "Path didn't found" << endl;
-    }
+    auto path = graph.dfs(59.8864419, 30.3585261, 59.9570161, 30.3027079);
+    assert(!path.empty());
+    assert(path.front()->lat == 59.8864419);
+    assert(path.back()->lat == 59.9570161);
+}
 
-    start = chrono::high_resolution_clock::now();
-    path = graph.dijkstra(30.3585261, 59.8864419, 30.3027079, 59.9570161);
-    cout << "Path size: "<< path.size() << endl;
-    end = chrono::high_resolution_clock::now();
-    delta = end - start;
-    cout << "Dijkstra: " << delta.count() << " s" << endl;
+void test_bfs() {
+    Graph graph;
+    graph.read_graph("graph.txt");
 
-    if (!path.empty()) {
-        cout << "Shorted path:" << endl;
-        for (const auto& node : path) {
-            cout << "(" << node->lat << ", " << node->lon << ") => ";
-        }
-        cout << "\n";
-    } else {
-        cout << "Path didn't found" << endl;
-    }
+    auto path = graph.bfs(59.8864419, 30.3585261, 59.9570161, 30.3027079);
+    assert(!path.empty());
+    assert(path.front()->lat == 59.8864419);
+    assert(path.back()->lat == 59.9570161);
+    assert(path.size() <= 5);
+}
 
-    start = chrono::high_resolution_clock::now();
-    path = graph.Astar(30.3585261, 59.8864419, 30.3027079, 59.9570161);
-    cout << "Path size: "<< path.size() << endl;
-    end = chrono::high_resolution_clock::now();
-    delta = end - start;
-    cout << "A*: " << delta.count() << " s"<< endl;;
+void test_dijkstra() {
+    Graph graph;
+    graph.read_graph("spb_graph.txt");
 
-    if (!path.empty()) {
-        cout << "Shorted path:" << endl;
-        for (const auto& node : path) {
-            cout << "(" << node->lat << ", " << node->lon << ") => ";
-        }
-        cout << "\n";
-    } else {
-        cout << "Path didn't found" << endl;
-    }
+    auto path = graph.dijkstra(59.8864419, 30.3585261, 59.9570161, 30.3027079);
+    assert(!path.empty());
+    assert(path.front()->lat == 59.8864419);
+    assert(path.back()->lat == 59.9570161);
+    assert(path.size() <= 5);
+    cout << path.size() << endl;
+}
 
+void test_astar() {
+    Graph graph;
+    graph.read_graph("graph.txt");
+
+    auto path = graph.Astar(59.8864419, 30.3585261, 59.9570161, 30.3027079);
+    assert(!path.empty());
+    assert(path.front()->lat == 59.8864419);
+    assert(path.back()->lat == 59.9570161);
+
+
+    assert(path.size() <= 5);
+    
+    
+}
+
+
+void run_tests() {
+    test_read_graph();
+    test_dfs();
+    test_bfs();
+    test_dijkstra();
+    test_astar();
+
+    cout << "All tests passed" << endl;
+}
+
+int main() {
+    run_tests();
     return 0;
 }
