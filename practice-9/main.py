@@ -32,7 +32,7 @@ class Tests(unittest.TestCase):
     def test5(self):
         matrix = np.array([[1, 2, 3],
                            [4, 5, 6]])
-        self.assertEqual(calc_diagonal_sum(matrix), 6)
+        self.assertEqual(calc_diagonal_sum(matrix), 6) # 1 + 5 = 6
 
 
 if __name__ == "__main__":
